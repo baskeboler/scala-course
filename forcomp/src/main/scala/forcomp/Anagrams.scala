@@ -90,15 +90,15 @@ object Anagrams {
     * Note that the order of the occurrence list subsets does not matter -- the subsets
     * in the example above could have been displayed in some other order.
     */
-  def combinations(occurrences: Occurrences): List[Occurrences] =
+  def combinations(occurrences: Occurrences): Stream[Occurrences] =
     occurrences match {
-      case Nil => List(List())
+      case Nil => List() #:: Stream.empty[Occurrences]
       case (chr, n) :: xs => {
         for {
-          i: Int <- (1 to n).toList
+          i: Int <- (1 to n).toStream
           combos: Occurrences <- combinations(xs)
         } yield (chr, i) :: combos
-      } ::: combinations(xs)
+      } #::: combinations(xs)
     }
 
   /** Subtracts occurrence list `y` from occurrence list `x`.
@@ -158,7 +158,30 @@ object Anagrams {
     *
     * Note: There is only one anagram of an empty sentence.
     */
-  lazy val anagramMap: Map[Occurrences, List[Sentence]] = Map( ('a' to 'z') {
+  def allOccurrencesUpTo(n: Int): Stream[Occurrences] = {
+    if (n <= 0) List() #:: Stream.empty
+    else {
+      val ocs: List[(Char, Int)] = for {
+        chr <- ('a' to 'z').toList
+      } yield (chr, n)
+
+      val ocs2: Stream[List[(Char, Int)]] = for {
+        perms: List[(Char, Int)] <- ocs.permutations.toStream
+        i <- 0 to perms.size
+
+      } yield perms.drop(i)
+      ocs2 #::: allOccurrencesUpTo(n-1)
+    }
+    combinations(for (chr <- ('a' to 'z').toList) yield (chr, n)).toStream
+  }
+  /*lazy val anagramMap: Map[Occurrences, List[Sentence]] = {
+    for {
+      occurrances: Occurrences <- allOccurrencesUpTo(10)
+      w: Word <- dictionaryByOccurrences(occurrances)
+
+    }
+  }*/
+    /*Map( ('a' to 'z') {
     for {
       ch <- 'a' to 'z'
       i <- 1 to 20
@@ -167,35 +190,27 @@ object Anagrams {
       ss: Sentence <- sentencesWithOccurrances(subtract(occurrances, ocs)) if (sentenceOccurrences(w :: ss).toSet == occurrances.toSet)
     } yield w :: ss
   }
-  )
-  def sentenceAnagrams(sentence: Sentence): List[Sentence] = {
+  )*/
+  def sentenceAnagrams(sentence: Sentence): Stream[Sentence] = {
     val s: Occurrences = sentenceOccurrences(sentence)
     //val anagramMap = Map[Occurrences, List[Sentence]]
-    def sentencesWithOccurrances(occurrances: Occurrences, ): List[Sentence] =
-      if (anagramMap.isDefinedAt(occurrances)) anagramMap(occurrances)
-      else {
-        val res: (Occurrences, List[List[Word]]) = occurrances -> {
+    def sentencesWithOccurrances(occurrances: Occurrences ): Stream[Sentence] =
           occurrances match {
 
-            case Nil => List(List())
+            case Nil => Stream(List())
             case _ => {
               for {
                 ocs: Occurrences <- combinations(occurrances) if dictionaryByOccurrences.isDefinedAt(ocs)
                 w: Word <- dictionaryByOccurrences(ocs)
-                ss: Sentence <- sentencesWithOccurrances(subtract(occurrances, ocs), anagramMap + (ocs ->)) if (sentenceOccurrences(w :: ss).toSet == occurrances.toSet)
+                ss: Sentence <- sentencesWithOccurrances(subtract(occurrances, ocs)) if (sentenceOccurrences(w :: ss).toSet == occurrances.toSet)
               } yield w :: ss
 
             }
           }
-        }
-        (anagramMap + res).apply(occurrances)
-      }
-    {
       s match {
-        case Nil => List(Nil)
-        case _ => sentencesWithOccurrances(s, Map())
+        case Nil => Stream(Nil)
+        case _ => sentencesWithOccurrances(s)
 
       }
-    }
   }
 }

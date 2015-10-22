@@ -11,7 +11,9 @@ package object forcomp {
     }
     try {
       val s = io.Source.fromInputStream(wordstream)
-      s.getLines.toList
+      val res = s.getLines.toList
+      println("" + res.size + " word loaded from dictionary." )
+      res
     } catch {
       case e: Exception =>
         println("Could not load word list: " + e)
