@@ -56,8 +56,6 @@ object Main {
       else if (m == 0) List(Nil)
       else {
         res += m -> {
-
-
           for {
             c <- coins if c <= m
             r: List[Int] <- cambio(m - c)
