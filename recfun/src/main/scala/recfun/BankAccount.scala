@@ -25,7 +25,7 @@ object BankAccountId {
   }
 }
 class BankAccount extends mutable.Publisher[MyEvt] {
-  private var balance: Int = 0
+  private val balance: frp = 0
   private var history: mutable.MutableList[AbstractTransaction] = mutable.MutableList()
   val id: Int = BankAccountId.nextId
   override def toString = s"Bankaccount(id=$id, balance=$balance)"
